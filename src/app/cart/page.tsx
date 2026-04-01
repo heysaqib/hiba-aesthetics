@@ -2,13 +2,68 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Minus, Plus, Trash2, ArrowRight, ShoppingBag } from "lucide-react";
+import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, X, AlertCircle, Heart } from "lucide-react";
 import { useCart } from "@/features/cart/cart-context";
+import { useWishlist } from "@/features/products/wishlist-context";
 import { formatPrice } from "@/lib/utils";
+import { CartItem } from "@/types/product";
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, totalPrice, totalItems } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const [itemToRemove, setItemToRemove] = useState<CartItem | null>(null);
+
+  const handleDecreaseQuantity = (item: CartItem) => {
+    if (item.quantity === 1) {
+      setItemToRemove(item);
+    } else {
+      updateQuantity(item.id, item.quantity - 1, {
+        selectedSize: item.selectedSize,
+        selectedColor: item.selectedColor,
+        selectedDesign: item.selectedDesign,
+      });
+    }
+  };
+
+  const handleIncreaseQuantity = (item: CartItem) => {
+    updateQuantity(item.id, item.quantity + 1, {
+      selectedSize: item.selectedSize,
+      selectedColor: item.selectedColor,
+      selectedDesign: item.selectedDesign,
+    });
+  };
+
+  const confirmRemoval = () => {
+    if (itemToRemove) {
+      removeFromCart(itemToRemove.id, {
+        selectedSize: itemToRemove.selectedSize,
+        selectedColor: itemToRemove.selectedColor,
+        selectedDesign: itemToRemove.selectedDesign,
+      });
+      setItemToRemove(null);
+    }
+  };
+
+  const handleMoveToWishlist = () => {
+    if (itemToRemove) {
+      // Add to wishlist if not already there
+      if (!isInWishlist(itemToRemove.id, {
+        selectedSize: itemToRemove.selectedSize,
+        selectedColor: itemToRemove.selectedColor,
+        selectedDesign: itemToRemove.selectedDesign,
+      })) {
+        toggleWishlist(itemToRemove, {
+          selectedSize: itemToRemove.selectedSize,
+          selectedColor: itemToRemove.selectedColor,
+          selectedDesign: itemToRemove.selectedDesign,
+        });
+      }
+      // Remove from cart
+      confirmRemoval();
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -21,15 +76,15 @@ export default function CartPage() {
           <div className="w-20 h-20 bg-brand-charcoal/5 rounded-full flex items-center justify-center mx-auto mb-6">
             <ShoppingBag className="w-10 h-10 text-brand-charcoal/40" />
           </div>
-          <h1 className="text-3xl font-serif mb-4">Your bag is empty</h1>
-          <p className="text-brand-charcoal/60 mb-8 max-w-md mx-auto">
-            Looks like you haven't added anything to your cart yet. Explore our collections and find something you love.
+          <h1 className="text-3xl font-serif mb-4 uppercase tracking-tight">Your Bag is Empty</h1>
+          <p className="text-brand-charcoal/60 mb-8 max-w-md mx-auto text-sm">
+            Discover our latest collections and find your next statement piece.
           </p>
           <Link
             href="/shop"
-            className="inline-block bg-brand-charcoal text-brand-cream px-8 py-4 text-xs tracking-widest uppercase font-bold hover:bg-brand-charcoal/90 transition-colors"
+            className="inline-block bg-brand-charcoal text-brand-cream px-10 py-4 text-[10px] tracking-[0.2em] uppercase font-bold hover:bg-brand-gold transition-colors"
           >
-            Start Shopping
+            Explore Collections
           </Link>
         </motion.div>
       </div>
@@ -40,7 +95,7 @@ export default function CartPage() {
     <div className="bg-brand-cream min-h-screen pb-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 md:mt-16">
         <h1 className="text-4xl md:text-6xl font-serif text-brand-charcoal mb-12 uppercase">
-          Your Shopping Bag
+          Shopping Bag
           <span className="text-sm font-sans tracking-widest text-brand-charcoal/40 ml-4 font-normal">
             ({totalItems} {totalItems === 1 ? 'item' : 'items'})
           </span>
@@ -53,57 +108,109 @@ export default function CartPage() {
               <AnimatePresence initial={false}>
                 {items.map((item) => (
                   <motion.div
-                    key={item.id}
+                    key={`${item.id}-${item.selectedSize}-${item.selectedColor?.id}`}
                     layout
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -100 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex py-8 border-b border-brand-charcoal/10 gap-6"
+                    className="flex py-10 border-b border-brand-charcoal/10 gap-6 sm:gap-10"
                   >
-                    <div className="relative w-24 h-32 sm:w-32 sm:h-44 flex-shrink-0 bg-brand-charcoal/5">
+                    <div className="relative w-28 h-36 sm:w-40 sm:h-52 flex-shrink-0 bg-brand-charcoal/5 overflow-hidden group">
                       <Image
                         src={item.image}
                         alt={item.name}
                         fill
-                        className="object-cover"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
                     
-                    <div className="flex-1 flex flex-col justify-between">
+                    <div className="flex-1 flex flex-col justify-between py-1">
                       <div>
-                        <div className="flex justify-between items-start mb-1">
+                        <div className="flex justify-between items-start mb-2">
                           <div>
-                            <h3 className="text-[10px] tracking-widest font-semibold uppercase text-brand-charcoal/60 mb-1">
+                            <h3 className="text-[10px] tracking-[0.2em] font-bold uppercase text-brand-charcoal/40 mb-1">
                               {item.brand}
                             </h3>
-                            <h2 className="text-sm sm:text-lg font-medium text-brand-charcoal uppercase leading-tight">
+                            <h2 className="text-sm sm:text-lg font-serif text-brand-charcoal uppercase tracking-tight">
                               {item.name}
                             </h2>
                           </div>
-                          <p className="text-sm sm:text-base font-semibold text-brand-charcoal whitespace-nowrap">
+                          <p className="text-sm sm:text-base font-bold text-brand-charcoal whitespace-nowrap">
                             Rs. {formatPrice(item.price)}
                           </p>
                         </div>
                         
-                        <div className="text-xs text-brand-charcoal/40 mt-1 uppercase tracking-wider">
-                          Product ID: #{item.id.padStart(4, '0')}
+                        {/* Constraints Display & Selection */}
+                        <div className="flex flex-wrap gap-x-8 gap-y-4 mt-6">
+                          <div className="flex flex-col">
+                            <span className="text-[9px] uppercase tracking-widest text-brand-charcoal/40 font-bold mb-2">Size</span>
+                            {item.selectedSize ? (
+                              <span className="text-xs font-bold text-brand-charcoal uppercase">{item.selectedSize}</span>
+                            ) : (
+                              <div className="flex gap-2">
+                                {['XS', 'S', 'M', 'L', 'XL'].map((s) => (
+                                  <button
+                                    key={s}
+                                    onClick={() => updateQuantity(item.id, item.quantity, { ...item, selectedSize: s })}
+                                    className="w-8 h-8 border border-brand-charcoal/20 text-[10px] flex items-center justify-center hover:border-brand-charcoal transition-colors"
+                                  >
+                                    {s}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col">
+                            <span className="text-[9px] uppercase tracking-widest text-brand-charcoal/40 font-bold mb-2">Color</span>
+                            {item.selectedColor ? (
+                              <div className="flex items-center space-x-2">
+                                <div className="w-3 h-3 rounded-full border border-brand-charcoal/10" style={{ backgroundColor: item.selectedColor.hex }} />
+                                <span className="text-xs font-bold text-brand-charcoal uppercase">{item.selectedColor.name}</span>
+                              </div>
+                            ) : (
+                              <div className="flex gap-2">
+                                {[
+                                  { id: "sage", hex: "#8A9A5B", name: "Sage Green" },
+                                  { id: "gold", hex: "#C5A165", name: "Gold Accent" }
+                                ].map((c) => (
+                                  <button
+                                    key={c.id}
+                                    onClick={() => updateQuantity(item.id, item.quantity, { ...item, selectedColor: c })}
+                                    className="w-6 h-6 rounded-full border border-brand-charcoal/10"
+                                    style={{ backgroundColor: c.hex }}
+                                    title={c.name}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex justify-between items-center mt-4">
-                        <div className="flex items-center border border-brand-charcoal/20">
+                      <div className="flex justify-between items-center mt-8">
+                        <Link 
+                          href={`/shop/${item.id}?${new URLSearchParams({
+                            ...(item.selectedSize && { size: item.selectedSize }),
+                            ...(item.selectedColor && { color: item.selectedColor.id }),
+                            ...(item.selectedDesign && { design: item.selectedDesign }),
+                          }).toString()}`}
+                          className="text-[10px] uppercase tracking-widest font-bold text-brand-charcoal/60 hover:text-brand-gold transition-colors underline underline-offset-4"
+                        >
+                          View Details
+                        </Link>
+                        <div className="flex items-center border border-brand-charcoal/20 bg-white/50">
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="p-2 hover:bg-brand-charcoal/5 transition-colors"
+                            onClick={() => handleDecreaseQuantity(item)}
+                            className="p-3 hover:bg-brand-charcoal hover:text-white transition-all"
                             aria-label="Decrease quantity"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
-                          <span className="w-10 text-center text-xs font-bold">{item.quantity}</span>
+                          <span className="w-12 text-center text-xs font-bold">{item.quantity}</span>
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="p-2 hover:bg-brand-charcoal/5 transition-colors"
+                            onClick={() => handleIncreaseQuantity(item)}
+                            className="p-3 hover:bg-brand-charcoal hover:text-white transition-all"
                             aria-label="Increase quantity"
                           >
                             <Plus className="w-3 h-3" />
@@ -111,11 +218,11 @@ export default function CartPage() {
                         </div>
 
                         <button
-                          onClick={() => removeFromCart(item.id)}
-                          className="text-brand-charcoal/40 hover:text-red-500 transition-colors p-2"
+                          onClick={() => setItemToRemove(item)}
+                          className="text-brand-charcoal/30 hover:text-red-600 transition-colors p-2 group"
                           aria-label="Remove item"
                         >
-                          <Trash2 className="w-5 h-5" />
+                          <Trash2 className="w-5 h-5 transition-transform group-hover:scale-110" />
                         </button>
                       </div>
                     </div>
@@ -127,43 +234,100 @@ export default function CartPage() {
 
           {/* Order Summary */}
           <div className="lg:col-span-4">
-            <div className="bg-white p-8 border border-brand-charcoal/5 sticky top-32">
-              <h2 className="text-xl font-serif mb-8 uppercase tracking-wider">Order Summary</h2>
+            <div className="bg-white p-10 border border-brand-charcoal/5 sticky top-32 shadow-sm">
+              <h2 className="text-xl font-serif mb-10 uppercase tracking-widest border-b border-brand-charcoal/10 pb-4">Summary</h2>
               
-              <div className="space-y-4 mb-8">
-                <div className="flex justify-between text-sm">
-                  <span className="text-brand-charcoal/60">Subtotal</span>
-                  <span className="font-medium text-brand-charcoal">Rs. {formatPrice(totalPrice)}</span>
+              <div className="space-y-5 mb-10">
+                <div className="flex justify-between text-[11px] uppercase tracking-[0.15em] font-medium">
+                  <span className="text-brand-charcoal/50">Subtotal</span>
+                  <span className="text-brand-charcoal font-bold">Rs. {formatPrice(totalPrice)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-brand-charcoal/60">Estimated Shipping</span>
-                  <span className="font-medium text-brand-charcoal">Calculated at checkout</span>
+                <div className="flex justify-between text-[11px] uppercase tracking-[0.15em] font-medium">
+                  <span className="text-brand-charcoal/50">Shipping</span>
+                  <span className="text-brand-charcoal/40 italic">Calculated at checkout</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-brand-charcoal/60">Tax</span>
-                  <span className="font-medium text-brand-charcoal">Rs. 0</span>
-                </div>
-                <div className="pt-4 border-t border-brand-charcoal/10 flex justify-between">
-                  <span className="font-bold text-brand-charcoal uppercase tracking-widest text-sm">Total</span>
-                  <span className="font-bold text-brand-charcoal text-lg">Rs. {formatPrice(totalPrice)}</span>
+                <div className="flex justify-between text-[11px] uppercase tracking-[0.15em] font-medium pt-5 border-t border-brand-charcoal/5">
+                  <span className="text-brand-charcoal font-bold">Estimated Total</span>
+                  <span className="text-brand-charcoal font-bold text-lg">Rs. {formatPrice(totalPrice)}</span>
                 </div>
               </div>
 
-              <button className="w-full bg-brand-charcoal text-brand-cream py-4 text-xs tracking-[0.2em] uppercase font-bold flex items-center justify-center group hover:bg-brand-charcoal/90 transition-all">
+              <button className="w-full bg-brand-charcoal text-brand-cream py-5 text-[10px] tracking-[0.3em] uppercase font-bold flex items-center justify-center group hover:bg-brand-gold transition-all shadow-lg">
                 Proceed to Checkout
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 ml-3 group-hover:translate-x-1 transition-transform" />
               </button>
               
-              <div className="mt-8 pt-8 border-t border-brand-charcoal/10">
-                <p className="text-[10px] text-brand-charcoal/40 uppercase tracking-widest text-center leading-relaxed">
-                  Shipping and taxes calculated at checkout.<br />
-                  Complimentary returns within 14 days.
+              <div className="mt-8">
+                <p className="text-[9px] text-brand-charcoal/40 uppercase tracking-[0.1em] text-center leading-relaxed">
+                  Complimentary worldwide shipping on orders above Rs. 100,000.<br />
+                  Safe & Secure Checkout
                 </p>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Professional Removal Confirmation Modal */}
+      <AnimatePresence>
+        {itemToRemove && (
+          <div className="fixed inset-0 z-[200000] flex items-center justify-center px-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setItemToRemove(null)}
+              className="absolute inset-0 bg-brand-charcoal/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-brand-cream w-full max-w-md p-10 shadow-2xl border border-brand-charcoal/10"
+            >
+              <button 
+                onClick={() => setItemToRemove(null)}
+                className="absolute top-6 right-6 text-brand-charcoal/40 hover:text-brand-charcoal transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6">
+                  <AlertCircle className="w-8 h-8 text-red-500" />
+                </div>
+                
+                <h2 className="text-2xl font-serif text-brand-charcoal mb-4 uppercase tracking-tight">Remove Item?</h2>
+                <p className="text-brand-charcoal/60 mb-8 text-sm leading-relaxed">
+                  Are you sure you want to remove <span className="text-brand-charcoal font-bold">"{itemToRemove.name}"</span> from your bag? This action cannot be undone.
+                </p>
+                
+                <div className="flex flex-col w-full space-y-3">
+                  <button
+                    onClick={handleMoveToWishlist}
+                    className="w-full bg-brand-gold text-brand-cream py-4 text-[10px] tracking-[0.2em] uppercase font-bold hover:bg-brand-gold/90 transition-colors shadow-md flex items-center justify-center"
+                  >
+                    <Heart className="w-4 h-4 mr-2" />
+                    Move to Wishlist
+                  </button>
+                  <button
+                    onClick={confirmRemoval}
+                    className="w-full bg-brand-charcoal text-brand-cream py-4 text-[10px] tracking-[0.2em] uppercase font-bold hover:bg-red-600 transition-colors"
+                  >
+                    Remove from Bag
+                  </button>
+                  <button
+                    onClick={() => setItemToRemove(null)}
+                    className="w-full bg-transparent text-brand-charcoal py-4 text-[10px] tracking-[0.2em] uppercase font-bold hover:bg-brand-charcoal/5 transition-colors"
+                  >
+                    Keep in Bag
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
