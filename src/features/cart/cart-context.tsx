@@ -8,6 +8,7 @@ interface CartContextType {
   addToCart: (product: Product, constraints?: Partial<CartItem>) => void;
   removeFromCart: (itemId: string, constraints?: Partial<CartItem>) => void;
   updateQuantity: (itemId: string, quantity: number, constraints?: Partial<CartItem>) => void;
+  updateConstraints: (itemId: string, oldConstraints: Partial<CartItem>, newConstraints: Partial<CartItem>) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -33,17 +34,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('hiba_cart', JSON.stringify(items));
   }, [items]);
 
-  const generateItemKey = (id: string, constraints?: Partial<CartItem>) => {
-    return `${id}-${constraints?.selectedSize || 'no-size'}-${constraints?.selectedColor?.id || 'no-color'}-${constraints?.selectedDesign || 'no-design'}`;
+  const areConstraintsEqual = (c1?: Partial<CartItem>, c2?: Partial<CartItem>) => {
+    return (
+      c1?.selectedSize === c2?.selectedSize &&
+      c1?.selectedColor?.id === c2?.selectedColor?.id &&
+      c1?.selectedDesign === c2?.selectedDesign
+    );
   };
 
   const addToCart = useCallback((product: Product, constraints?: Partial<CartItem>) => {
     setItems((prevItems) => {
       const existingItemIndex = prevItems.findIndex(item => 
-        item.id === product.id && 
-        item.selectedSize === constraints?.selectedSize &&
-        item.selectedColor?.id === constraints?.selectedColor?.id &&
-        item.selectedDesign === constraints?.selectedDesign
+        item.id === product.id && areConstraintsEqual(item, constraints)
       );
 
       if (existingItemIndex > -1) {
@@ -66,15 +68,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const removeFromCart = useCallback((productId: string, constraints?: Partial<CartItem>) => {
-    setItems((prevItems) => prevItems.filter((item) => {
-      const isSameProduct = item.id === productId;
-      const isSameConstraints = 
-        item.selectedSize === constraints?.selectedSize &&
-        item.selectedColor?.id === constraints?.selectedColor?.id &&
-        item.selectedDesign === constraints?.selectedDesign;
-      
-      return !(isSameProduct && isSameConstraints);
-    }));
+    setItems((prevItems) => prevItems.filter((item) => 
+      !(item.id === productId && areConstraintsEqual(item, constraints))
+    ));
   }, []);
 
   const updateQuantity = useCallback((productId: string, quantity: number, constraints?: Partial<CartItem>) => {
@@ -82,18 +78,56 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setItems((prevItems) =>
       prevItems.map((item) => {
-        const isSameProduct = item.id === productId;
-        const isSameConstraints = 
-          item.selectedSize === constraints?.selectedSize &&
-          item.selectedColor?.id === constraints?.selectedColor?.id &&
-          item.selectedDesign === constraints?.selectedDesign;
-
-        if (isSameProduct && isSameConstraints) {
+        if (item.id === productId && areConstraintsEqual(item, constraints)) {
           return { ...item, quantity };
         }
         return item;
       })
     );
+  }, []);
+
+  const updateConstraints = useCallback((productId: string, oldConstraints: Partial<CartItem>, newConstraints: Partial<CartItem>) => {
+    setItems((prevItems) => {
+      // Find the item to update
+      const itemToUpdateIndex = prevItems.findIndex(item => 
+        item.id === productId && areConstraintsEqual(item, oldConstraints)
+      );
+
+      if (itemToUpdateIndex === -1) return prevItems;
+
+      const itemToUpdate = prevItems[itemToUpdateIndex];
+      const updatedConstraints = {
+        selectedSize: newConstraints.selectedSize !== undefined ? newConstraints.selectedSize : itemToUpdate.selectedSize,
+        selectedColor: newConstraints.selectedColor !== undefined ? newConstraints.selectedColor : itemToUpdate.selectedColor,
+        selectedDesign: newConstraints.selectedDesign !== undefined ? newConstraints.selectedDesign : itemToUpdate.selectedDesign,
+      };
+
+      // Check if an item with these NEW constraints already exists
+      const existingItemIndex = prevItems.findIndex((item, idx) => 
+        idx !== itemToUpdateIndex && 
+        item.id === productId && 
+        areConstraintsEqual(item, updatedConstraints)
+      );
+
+      if (existingItemIndex > -1) {
+        // Merge with existing item
+        const newItems = [...prevItems];
+        newItems[existingItemIndex] = {
+          ...newItems[existingItemIndex],
+          quantity: newItems[existingItemIndex].quantity + itemToUpdate.quantity
+        };
+        // Remove the old item
+        return newItems.filter((_, idx) => idx !== itemToUpdateIndex);
+      }
+
+      // Just update the current item
+      const newItems = [...prevItems];
+      newItems[itemToUpdateIndex] = {
+        ...itemToUpdate,
+        ...updatedConstraints
+      };
+      return newItems;
+    });
   }, []);
 
   const clearCart = useCallback(() => {
@@ -110,6 +144,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addToCart,
         removeFromCart,
         updateQuantity,
+        updateConstraints,
         clearCart,
         totalItems,
         totalPrice,
