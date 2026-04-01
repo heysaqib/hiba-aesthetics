@@ -2,9 +2,34 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Lock, Mail } from "lucide-react";
+import { ArrowRight, Lock, Mail, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { login } from "@/features/auth/auth-actions";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    const formData = new FormData(event.currentTarget);
+    const result = await login(formData);
+
+    setIsLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+    } else {
+      router.push("/");
+      router.refresh();
+    }
+  }
+
   return (
     <div className="min-h-screen flex bg-brand-cream">
       {/* Left side Image */}
@@ -34,14 +59,21 @@ export default function LoginPage() {
             <p className="text-brand-charcoal/60 text-sm">Welcome back. Please enter your credentials.</p>
           </div>
 
-          <form className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 text-red-700 text-sm">
+                {error}
+              </div>
+            )}
             <div className="space-y-2">
               <label className="text-xs uppercase tracking-widest font-semibold text-brand-charcoal">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-charcoal/40" />
                 <input
+                  name="email"
                   type="email"
                   placeholder="name@example.com"
+                  required
                   className="w-full border-b border-brand-charcoal/20 bg-transparent py-3 pl-10 pr-4 outline-none focus:border-brand-charcoal transition-colors placeholder:text-brand-charcoal/30 flex items-center text-sm"
                 />
               </div>
@@ -55,8 +87,10 @@ export default function LoginPage() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-charcoal/40" />
                 <input
+                  name="password"
                   type="password"
                   placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
+                  required
                   className="w-full border-b border-brand-charcoal/20 bg-transparent py-3 pl-10 pr-4 outline-none focus:border-brand-charcoal transition-colors placeholder:text-brand-charcoal/30 flex items-center text-sm"
                 />
               </div>
@@ -64,10 +98,17 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full mt-8 flex items-center justify-center space-x-2 bg-brand-charcoal text-white py-4 hover:bg-brand-gold transition-colors group"
+              disabled={isLoading}
+              className="w-full mt-8 flex items-center justify-center space-x-2 bg-brand-charcoal text-white py-4 hover:bg-brand-gold transition-colors group disabled:opacity-50"
             >
-              <span className="text-sm uppercase tracking-widest font-medium">Continue</span>
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <span className="text-sm uppercase tracking-widest font-medium">Continue</span>
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </>
+              )}
             </button>
           </form>
 
