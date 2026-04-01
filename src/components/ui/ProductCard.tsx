@@ -52,13 +52,15 @@ export function ProductCard({ id, brand, name, price, originalPrice, image }: Pr
     >
       <div className="relative aspect-[3/4] w-full overflow-hidden bg-brand-charcoal/5 mb-4">
         <Link href={`/shop/${id}`}>
-          <Image
-            src={image}
-            alt={name}
-            fill
-            className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
+          <div className="relative w-full h-full">
+            <Image
+              src={image}
+              alt={name}
+              fill
+              className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          </div>
         </Link>
         
         {/* Quick Actions */}

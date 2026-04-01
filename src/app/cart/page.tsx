@@ -11,7 +11,7 @@ import { formatPrice } from "@/lib/utils";
 import { CartItem } from "@/types/product";
 
 export default function CartPage() {
-  const { items, removeFromCart, updateQuantity, totalPrice, totalItems } = useCart();
+  const { items, removeFromCart, updateQuantity, updateConstraints, totalPrice, totalItems } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [itemToRemove, setItemToRemove] = useState<CartItem | null>(null);
 
@@ -121,6 +121,7 @@ export default function CartPage() {
                         alt={item.name}
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       />
                     </div>
                     
@@ -151,7 +152,11 @@ export default function CartPage() {
                                 {['XS', 'S', 'M', 'L', 'XL'].map((s) => (
                                   <button
                                     key={s}
-                                    onClick={() => updateQuantity(item.id, item.quantity, { ...item, selectedSize: s })}
+                                    onClick={() => updateConstraints(item.id, {
+                                      selectedSize: item.selectedSize,
+                                      selectedColor: item.selectedColor,
+                                      selectedDesign: item.selectedDesign
+                                    }, { selectedSize: s })}
                                     className="w-8 h-8 border border-brand-charcoal/20 text-[10px] flex items-center justify-center hover:border-brand-charcoal transition-colors"
                                   >
                                     {s}
@@ -176,7 +181,11 @@ export default function CartPage() {
                                 ].map((c) => (
                                   <button
                                     key={c.id}
-                                    onClick={() => updateQuantity(item.id, item.quantity, { ...item, selectedColor: c })}
+                                    onClick={() => updateConstraints(item.id, {
+                                      selectedSize: item.selectedSize,
+                                      selectedColor: item.selectedColor,
+                                      selectedDesign: item.selectedDesign
+                                    }, { selectedColor: c })}
                                     className="w-6 h-6 rounded-full border border-brand-charcoal/10"
                                     style={{ backgroundColor: c.hex }}
                                     title={c.name}
