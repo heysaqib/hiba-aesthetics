@@ -38,7 +38,7 @@ export async function login(formData: FormData) {
       id: user._id.toString(),
       email: user.email,
       role: user.role,
-      name: user.name || user.email // Fallback to email if name is not set
+      name: user.name || user.email
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
@@ -85,7 +85,7 @@ export async function signup(formData: FormData) {
       email,
       password: hashedPassword,
       mobileNumber,
-      name: '', // Will be updated in profile
+      name: '',
     });
 
     const token = await new SignJWT({ 
@@ -145,7 +145,6 @@ export async function getUserProfile() {
     const user = await User.findById(session.id).lean();
     if (!user) return null;
     
-    // Convert _id to string for serialization
     return JSON.parse(JSON.stringify(user));
   } catch (error) {
     return null;
@@ -191,6 +190,10 @@ export async function addAddress(formData: FormData) {
     await connectToDatabase();
     const user = await User.findById(session.id);
     
+    if (!user) return { error: 'User not found' };
+
+    if (!user.addresses) user.addresses = [];
+
     if (address.isDefault) {
       user.addresses.forEach((addr: any) => addr.isDefault = false);
     }
@@ -201,7 +204,68 @@ export async function addAddress(formData: FormData) {
     revalidatePath('/profile');
     return { success: true };
   } catch (error: any) {
+    console.error('Add address error:', error);
     return { error: 'Failed to add address' };
+  }
+}
+
+export async function updateAddress(addressId: string, formData: FormData) {
+  const session = await getSession();
+  if (!session) return { error: 'Not authenticated' };
+
+  const updatedAddress = {
+    name: formData.get('name') as string,
+    mobile: formData.get('mobile') as string,
+    street: formData.get('street') as string,
+    city: formData.get('city') as string,
+    state: formData.get('state') as string,
+    zipCode: formData.get('zipCode') as string,
+    isDefault: formData.get('isDefault') === 'on',
+  };
+
+  try {
+    await connectToDatabase();
+    const user = await User.findById(session.id);
+    if (!user) return { error: 'User not found' };
+
+    const addressIndex = user.addresses.findIndex((addr: any) => addr._id.toString() === addressId);
+    if (addressIndex === -1) return { error: 'Address not found' };
+
+    if (updatedAddress.isDefault) {
+      user.addresses.forEach((addr: any) => addr.isDefault = false);
+    }
+
+    user.addresses[addressIndex] = { ...user.addresses[addressIndex].toObject(), ...updatedAddress };
+    await user.save();
+
+    revalidatePath('/profile');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Update address error:', error);
+    return { error: 'Failed to update address' };
+  }
+}
+
+export async function setPrimaryAddress(addressId: string) {
+  const session = await getSession();
+  if (!session) return { error: 'Not authenticated' };
+
+  try {
+    await connectToDatabase();
+    const user = await User.findById(session.id);
+    if (!user) return { error: 'User not found' };
+
+    user.addresses.forEach((addr: any) => {
+      addr.isDefault = addr._id.toString() === addressId;
+    });
+
+    await user.save();
+
+    revalidatePath('/profile');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Set primary address error:', error);
+    return { error: 'Failed to set primary address' };
   }
 }
 

@@ -111,13 +111,13 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-8 flex items-center justify-center space-x-2 bg-brand-charcoal text-white py-4 hover:bg-brand-gold transition-colors group disabled:opacity-50"
+              className="w-full mt-8 flex items-center justify-center space-x-2 bg-brand-gold text-white py-4 hover:bg-brand-charcoal transition-all duration-300 group disabled:opacity-50 shadow-md active:scale-[0.98]"
             >
               {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
               ) : (
                 <>
-                  <span className="text-sm uppercase tracking-widest font-medium">Create Account</span>
+                  <span className="text-xs uppercase tracking-[0.2em] font-bold">Create Account</span>
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </>
               )}

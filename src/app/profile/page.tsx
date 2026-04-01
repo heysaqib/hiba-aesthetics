@@ -12,28 +12,55 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="bg-brand-cream min-h-screen py-20 px-4 sm:px-6 lg:px-8">
+    <div className="bg-brand-cream min-h-screen pt-32 pb-24 px-6 sm:px-10">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-end mb-12 border-b border-brand-charcoal/10 pb-8">
-          <div>
-            <h1 className="text-4xl font-serif text-brand-charcoal mb-2">My Profile</h1>
-            <p className="text-brand-charcoal/60">Manage your personal information and delivery addresses.</p>
+        {/* Header Section */}
+        <div className="flex justify-between items-start mb-20">
+          <div className="space-y-2">
+            <h1 className="text-4xl md:text-5xl font-serif text-brand-charcoal tracking-tight">
+              Account <span className="text-brand-gold italic">Settings</span>
+            </h1>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-brand-charcoal/40 font-bold">
+              Personal sanctuary & preferences
+            </p>
           </div>
           <LogoutButton />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-          {/* Personal Details Section */}
-          <div className="md:col-span-1">
-            <h2 className="text-xs uppercase tracking-[0.2em] font-bold text-brand-charcoal mb-6">Personal Details</h2>
+        <div className="space-y-24">
+          {/* Profile Section */}
+          <section className="max-w-2xl">
+            <div className="flex items-center space-x-4 mb-10">
+              <div className="w-12 h-12 bg-brand-gold/10 rounded-full flex items-center justify-center border border-brand-gold/20">
+                <span className="text-brand-gold font-serif text-xl">
+                  {user.name ? user.name[0].toUpperCase() : user.email[0].toUpperCase()}
+                </span>
+              </div>
+              <h2 className="text-xs uppercase tracking-[0.2em] font-bold text-brand-charcoal">
+                Profile Information
+              </h2>
+            </div>
             <ProfileForm user={user} />
-          </div>
+          </section>
 
-          {/* Addresses Section */}
-          <div className="md:col-span-2">
-            <h2 className="text-xs uppercase tracking-[0.2em] font-bold text-brand-charcoal mb-6">Address Book</h2>
-            <AddressBook addresses={user.addresses || []} />
-          </div>
+          {/* Address Section */}
+          <section>
+            <div className="flex items-center space-x-4 mb-10">
+              <div className="w-12 h-12 bg-brand-gold/10 rounded-full flex items-center justify-center border border-brand-gold/20 text-brand-gold">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <h2 className="text-xs uppercase tracking-[0.2em] font-bold text-brand-charcoal">
+                Delivery Destinations
+              </h2>
+            </div>
+            <AddressBook 
+              addresses={user.addresses || []} 
+              isProfileComplete={!!(user.name && user.mobileNumber)} 
+            />
+          </section>
         </div>
       </div>
     </div>
