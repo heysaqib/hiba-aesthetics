@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { CartProvider } from "@/features/cart/cart-context";
+import { WishlistProvider } from "@/features/products/wishlist-context";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,11 +37,15 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans bg-brand-cream text-brand-charcoal">
-        <Navbar />
-        <main className="flex-1 pt-20">
-          {children}
-        </main>
-        <Footer />
+        <CartProvider>
+          <WishlistProvider>
+            <Navbar />
+            <main className="flex-1 pt-20">
+              {children}
+            </main>
+            <Footer />
+          </WishlistProvider>
+        </CartProvider>
       </body>
     </html>
   );
