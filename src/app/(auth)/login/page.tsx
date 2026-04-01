@@ -40,6 +40,7 @@ export default function LoginPage() {
           fill
           className="object-cover object-bottom"
           priority
+          sizes="(max-width: 1024px) 100vw, 50vw"
         />
         <div className="absolute inset-0 bg-brand-charcoal/20" />
         <div className="absolute bottom-16 left-16 right-16 text-white text-center">
@@ -114,7 +115,7 @@ export default function LoginPage() {
 
           <div className="mt-12 text-center lg:text-left border-t border-brand-charcoal/10 pt-8">
             <p className="text-sm text-brand-charcoal/60">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/signup" className="font-semibold text-brand-charcoal hover:text-brand-gold transition-colors underline">
                 Create one
               </Link>

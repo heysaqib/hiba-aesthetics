@@ -14,10 +14,17 @@ const navLinks = [
   { name: "UNSTITCHED", href: "/shop?category=unstitched" },
 ];
 
+interface UserSession {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
+
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserSession | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -29,7 +36,9 @@ export function Navbar() {
     // Fetch session
     const fetchSession = async () => {
       const session = await getSession();
-      setUser(session);
+      if (session) {
+        setUser(session as unknown as UserSession);
+      }
     };
     fetchSession();
 
@@ -46,7 +55,7 @@ export function Navbar() {
   return (
     <>
       <motion.header
-        className={`fixed top-0 w-full z-50 transition-colors duration-300 ${
+        className={`fixed top-0 w-full z-[100010] transition-colors duration-300 ${
           isScrolled ? "bg-brand-cream/80 backdrop-blur-md border-b border-brand-charcoal/10" : "bg-transparent"
         }`}
         initial={{ y: -100 }}

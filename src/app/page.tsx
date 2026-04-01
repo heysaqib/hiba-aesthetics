@@ -24,6 +24,7 @@ export default function Home() {
             fill
             className="object-cover object-top brightness-[0.85]"
             priority
+            sizes="100vw"
           />
         </motion.div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, SlidersHorizontal, Plus } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
 import { ProductCard } from "@/components/ui/ProductCard";
 
 const DUMMY_PRODUCTS = [
@@ -46,15 +46,15 @@ export default function ShopPage() {
             </button>
             <div className="flex items-center space-x-2 border border-brand-charcoal/20 px-4 py-2 text-xs tracking-widest uppercase text-brand-charcoal">
               <span>Kurta Sets</span>
-              <span className="opacity-50 ml-2 cursor-pointer hover:opacity-100">&times;</span>
+              <span className="opacity-50 ml-2 cursor-pointer hover:opacity-100">×</span>
             </div>
             <div className="flex items-center space-x-2 border border-brand-charcoal/20 px-4 py-2 text-xs tracking-widest uppercase text-brand-charcoal">
               <span>Size M</span>
-              <span className="opacity-50 ml-2 cursor-pointer hover:opacity-100">&times;</span>
+              <span className="opacity-50 ml-2 cursor-pointer hover:opacity-100">×</span>
             </div>
             <div className="flex items-center space-x-2 border border-brand-charcoal/20 px-4 py-2 text-xs tracking-widest uppercase text-brand-charcoal hidden sm:flex">
               <span>Rs. 10,000 - 50,000</span>
-              <span className="opacity-50 ml-2 cursor-pointer hover:opacity-100">&times;</span>
+              <span className="opacity-50 ml-2 cursor-pointer hover:opacity-100">×</span>
             </div>
           </div>
 

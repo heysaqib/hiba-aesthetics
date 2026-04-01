@@ -4,7 +4,13 @@ import { useState } from "react";
 import { updateProfile } from "@/features/auth/auth-actions";
 import { Loader2, Check, AlertCircle } from "lucide-react";
 
-export default function ProfileForm({ user }: { user: any }) {
+interface UserProfile {
+  name: string;
+  email: string;
+  mobileNumber: string;
+}
+
+export default function ProfileForm({ user }: { user: UserProfile }) {
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { formatPrice } from "@/lib/utils";
 
 interface ProductCardProps {
   id: string;
@@ -37,10 +38,10 @@ export function ProductCard({ id, brand, name, price, originalPrice, image }: Pr
           <p className="text-sm text-brand-charcoal/80 uppercase font-medium truncate">{name}</p>
           <div className="flex items-center space-x-2 mt-1">
             {originalPrice && (
-              <span className="text-sm text-brand-charcoal/40 line-through">Rs. {originalPrice.toLocaleString()}</span>
+              <span className="text-sm text-brand-charcoal/40 line-through">Rs. {formatPrice(originalPrice)}</span>
             )}
             <span className={`text-sm font-semibold ${originalPrice ? 'text-red-600' : 'text-brand-charcoal'}`}>
-              Rs. {price.toLocaleString()}
+              Rs. {formatPrice(price)}
             </span>
           </div>
         </div>
