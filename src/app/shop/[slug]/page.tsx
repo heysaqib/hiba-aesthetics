@@ -2,15 +2,22 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { ChevronDown, Heart, Share2, Facebook, Twitter, Instagram } from "lucide-react";
 import { ProductImageGallery } from "@/components/products/ProductImageGallery";
 
 export default function ProductDetailPage() {
+  const [selectedColor, setSelectedColor] = useState("sage");
   const images = [
     "/images/products/pakistani_casual_1_1775023839040.png",
     "/images/products/pakistani_casual_2_1775023855002.png",
     "/images/products/pakistani_casual_3_1775024029352.png",
     "/images/products/pakistani_bridal_1_1775023821125.png"
+  ];
+
+  const colors = [
+    { id: "sage", hex: "#8A9A5B", name: "Sage Green" },
+    { id: "gold", hex: "#C5A165", name: "Gold Accent" }
   ];
 
   return (
@@ -40,12 +47,22 @@ export default function ProductDetailPage() {
 
             {/* Color Selector */}
             <div className="mb-8">
-              <h3 className="text-sm font-semibold tracking-widest uppercase text-brand-charcoal mb-4">Color</h3>
+              <h3 className="text-sm font-semibold tracking-widest uppercase text-brand-charcoal mb-4">Color: <span className="font-medium text-brand-gold ml-2">{colors.find(c => c.id === selectedColor)?.name}</span></h3>
               <div className="flex space-x-3">
-                <button className="w-8 h-8 rounded-full border border-brand-charcoal bg-[#8A9A5B] flex items-center justify-center relative">
-                  <span className="absolute inset-0 border-2 border-brand-cream rounded-full pointer-events-none" />
-                </button>
-                <button className="w-8 h-8 rounded-full border-brand-charcoal/20 bg-[#C5A165] flex items-center justify-center hover:border-brand-charcoal transition-colors border" />
+                {colors.map((color) => (
+                  <button
+                    key={color.id}
+                    onClick={() => setSelectedColor(color.id)}
+                    className={`w-8 h-8 rounded-full border transition-all duration-300 relative ${
+                      selectedColor === color.id ? "border-brand-charcoal ring-2 ring-brand-gold/20" : "border-brand-charcoal/20"
+                    }`}
+                    style={{ backgroundColor: color.hex }}
+                  >
+                    {selectedColor === color.id && (
+                      <span className="absolute inset-0 border-2 border-brand-cream rounded-full pointer-events-none" />
+                    )}
+                  </button>
+                ))}
               </div>
             </div>
 

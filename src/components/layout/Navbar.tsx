@@ -46,7 +46,7 @@ export function Navbar() {
   return (
     <>
       <motion.header
-        className={`fixed top-0 w-full z-50 transition-colors duration-300 ${
+        className={`fixed top-0 w-full z-[100010] transition-colors duration-300 ${
           isScrolled ? "bg-brand-cream/80 backdrop-blur-md border-b border-brand-charcoal/10" : "bg-transparent"
         }`}
         initial={{ y: -100 }}
