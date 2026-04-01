@@ -94,16 +94,19 @@ export function Navbar() {
               
               {user ? (
                 <div className="flex items-center space-x-4">
-                  <span className="hidden sm:inline text-xs font-semibold uppercase tracking-widest text-brand-charcoal/60">
-                    Hi, {user.name.split(' ')[0]}
-                  </span>
-                  <button 
-                    onClick={handleLogout}
-                    className="text-brand-charcoal hover:text-brand-gold transition-colors" 
-                    aria-label="Logout"
+                  <Link 
+                    href="/profile"
+                    className="hidden sm:inline text-[10px] font-bold uppercase tracking-[0.2em] text-brand-charcoal/60 hover:text-brand-charcoal transition-colors"
                   >
-                    <LogOut className="w-5 h-5 stroke-[1.5]" />
-                  </button>
+                    Hi, {user.name ? user.name.split(' ')[0] : 'User'}
+                  </Link>
+                  <Link 
+                    href="/profile"
+                    className="text-brand-charcoal hover:text-brand-gold transition-colors" 
+                    aria-label="Profile"
+                  >
+                    <User className="w-5 h-5 stroke-[1.5]" />
+                  </Link>
                 </div>
               ) : (
                 <Link href="/login" className="hidden sm:block text-brand-charcoal hover:text-brand-gold transition-colors" aria-label="Account">

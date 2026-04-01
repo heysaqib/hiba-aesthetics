@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Lock, Mail, Loader2 } from "lucide-react";
+import { ArrowRight, Lock, Mail, Phone, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { login } from "@/features/auth/auth-actions";
+import { signup } from "@/features/auth/auth-actions";
 import { useRouter } from "next/navigation";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -18,14 +18,14 @@ export default function LoginPage() {
     setIsLoading(true);
 
     const formData = new FormData(event.currentTarget);
-    const result = await login(formData);
+    const result = await signup(formData);
 
     setIsLoading(false);
 
     if (result.error) {
       setError(result.error);
     } else {
-      router.push("/");
+      router.push("/profile");
       router.refresh();
     }
   }
@@ -36,15 +36,15 @@ export default function LoginPage() {
       <div className="hidden lg:flex w-1/2 relative">
         <Image
           src="/images/products/pakistani_bridal_1_1775023821125.png"
-          alt="Login background"
+          alt="Signup background"
           fill
           className="object-cover object-bottom"
           priority
         />
         <div className="absolute inset-0 bg-brand-charcoal/20" />
         <div className="absolute bottom-16 left-16 right-16 text-white text-center">
-          <h2 className="text-3xl font-serif mb-4 drop-shadow-md">Welcome back to elegance</h2>
-          <p className="text-sm text-white/80 font-medium tracking-wide">Enter the world of luxury Pakistani ethnic wear.</p>
+          <h2 className="text-3xl font-serif mb-4 drop-shadow-md">Join the world of elegance</h2>
+          <p className="text-sm text-white/80 font-medium tracking-wide">Create an account to experience luxury Pakistani ethnic wear.</p>
         </div>
       </div>
 
@@ -55,8 +55,8 @@ export default function LoginPage() {
         </Link>
         <div className="w-full max-w-md">
           <div className="mb-12 text-center lg:text-left">
-            <h1 className="text-3xl md:text-4xl font-serif text-brand-charcoal mb-4">Log in</h1>
-            <p className="text-brand-charcoal/60 text-sm">Welcome back. Please enter your credentials.</p>
+            <h1 className="text-3xl md:text-4xl font-serif text-brand-charcoal mb-4">Sign up</h1>
+            <p className="text-brand-charcoal/60 text-sm">Create your account with just a few details.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -65,6 +65,7 @@ export default function LoginPage() {
                 {error}
               </div>
             )}
+            
             <div className="space-y-2">
               <label className="text-xs uppercase tracking-widest font-semibold text-brand-charcoal">Email Address</label>
               <div className="relative">
@@ -80,10 +81,21 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <label className="text-xs uppercase tracking-widest font-semibold text-brand-charcoal">Password</label>
-                <Link href="#" className="text-xs text-brand-charcoal/60 hover:text-brand-charcoal underline transition-colors">Forgot?</Link>
+              <label className="text-xs uppercase tracking-widest font-semibold text-brand-charcoal">Mobile Number</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-charcoal/40" />
+                <input
+                  name="mobileNumber"
+                  type="tel"
+                  placeholder="+92 300 1234567"
+                  required
+                  className="w-full border-b border-brand-charcoal/20 bg-transparent py-3 pl-10 pr-4 outline-none focus:border-brand-charcoal transition-colors placeholder:text-brand-charcoal/30 flex items-center text-sm"
+                />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs uppercase tracking-widest font-semibold text-brand-charcoal">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-charcoal/40" />
                 <input
@@ -105,7 +117,7 @@ export default function LoginPage() {
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  <span className="text-sm uppercase tracking-widest font-medium">Continue</span>
+                  <span className="text-sm uppercase tracking-widest font-medium">Create Account</span>
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </>
               )}
@@ -114,9 +126,9 @@ export default function LoginPage() {
 
           <div className="mt-12 text-center lg:text-left border-t border-brand-charcoal/10 pt-8">
             <p className="text-sm text-brand-charcoal/60">
-              Don't have an account?{' '}
-              <Link href="/signup" className="font-semibold text-brand-charcoal hover:text-brand-gold transition-colors underline">
-                Create one
+              Already have an account?{' '}
+              <Link href="/login" className="font-semibold text-brand-charcoal hover:text-brand-gold transition-colors underline">
+                Log in
               </Link>
             </p>
           </div>
