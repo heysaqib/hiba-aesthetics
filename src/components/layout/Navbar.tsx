@@ -4,10 +4,11 @@ import Link from "next/link";
 import { Search, User, Heart, ShoppingBag, Menu, LogOut, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getSession, logout } from "@/features/auth/auth-actions";
+import { logout as logoutAction } from "@/features/auth/auth-actions";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/features/cart/cart-context";
 import { useWishlist } from "@/features/products/wishlist-context";
+import { useAuth } from "@/features/auth/auth-context";
 
 const navLinks = [
   { name: "BRIDAL", href: "/shop?category=bridal" },
@@ -16,21 +17,14 @@ const navLinks = [
   { name: "UNSTITCHED", href: "/shop?category=unstitched" },
 ];
 
-interface UserSession {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-}
-
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<UserSession | null>(null);
+  const { user, logout: clearUser } = useAuth();
   const router = useRouter();
   
-  const { totalItems: cartCount } = useCart();
-  const { items: wishlistItems } = useWishlist();
+  const { totalItems: cartCount, clearCart } = useCart();
+  const { items: wishlistItems, clearWishlist } = useWishlist();
   const wishlistCount = wishlistItems.length;
 
   useEffect(() => {
@@ -39,21 +33,16 @@ export function Navbar() {
     };
     window.addEventListener("scroll", handleScroll);
 
-    // Fetch session
-    const fetchSession = async () => {
-      const session = await getSession();
-      if (session) {
-        setUser(session as unknown as UserSession);
-      }
-    };
-    fetchSession();
-
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleLogout = async () => {
-    await logout();
-    setUser(null);
+    // Clear local data
+    clearCart();
+    clearWishlist();
+    clearUser();
+    
+    await logoutAction();
     router.push("/");
     router.refresh();
   };

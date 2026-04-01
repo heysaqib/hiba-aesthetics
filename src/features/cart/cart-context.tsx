@@ -1,7 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { Product, CartItem } from '@/types/product';
+import { useAuth } from '@/features/auth/auth-context';
+import { syncCart, getCartAndWishlist } from '@/features/products/product-actions';
 
 interface CartContextType {
   items: CartItem[];
@@ -12,28 +14,19 @@ interface CartContextType {
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
+  isLoaded: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const { user } = useAuth();
+  const isInitialSyncRef = useRef(false);
+  const prevUserRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    const savedCart = localStorage.getItem('hiba_cart');
-    if (savedCart) {
-      try {
-        setItems(JSON.parse(savedCart));
-      } catch (e) {
-        console.error('Failed to parse cart', e);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('hiba_cart', JSON.stringify(items));
-  }, [items]);
-
+  // Helper to compare constraints
   const areConstraintsEqual = (c1?: Partial<CartItem>, c2?: Partial<CartItem>) => {
     return (
       c1?.selectedSize === c2?.selectedSize &&
@@ -41,6 +34,99 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       c1?.selectedDesign === c2?.selectedDesign
     );
   };
+
+  // Load from local storage and sync with DB on mount or user change
+  useEffect(() => {
+    const initializeCart = async () => {
+      const currentUserId = user?.id || null;
+      
+      // Avoid re-initializing if user hasn't actually changed
+      if (isLoaded && currentUserId === prevUserRef.current) return;
+      
+      // 1. Load current items from localStorage immediately for responsive UI
+      const savedData = localStorage.getItem('hiba_cart');
+      let localItems: CartItem[] = [];
+      let localUserId: string | null = null;
+
+      if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData);
+          if (Array.isArray(parsed)) {
+            localItems = parsed; // Support old format
+          } else {
+            localItems = parsed.items || [];
+            localUserId = parsed.userId || null;
+          }
+        } catch (e) {
+          console.error('Failed to parse cart', e);
+        }
+      }
+
+      // Initial local load to show items immediately if not already loaded
+      if (!isLoaded) {
+        setItems(localItems);
+      }
+
+      // 2. If logged in, perform smart sync/merge
+      if (user) {
+        const dbData = await getCartAndWishlist();
+        if (dbData && dbData.cart) {
+          const dbItems: CartItem[] = dbData.cart;
+          
+          // Merge ONLY if we have a guest cart (localUserId is null)
+          if (localUserId !== user.id) {
+            const mergedItems = [...dbItems];
+            
+            localItems.forEach(localItem => {
+              const existingIndex = mergedItems.findIndex(dbItem => 
+                dbItem.id === localItem.id && areConstraintsEqual(dbItem, localItem)
+              );
+              
+              if (existingIndex > -1) {
+                mergedItems[existingIndex].quantity += localItem.quantity;
+              } else {
+                mergedItems.push(localItem);
+              }
+            });
+
+            setItems(mergedItems);
+            await syncCart(mergedItems);
+          } else {
+            // userId matches, DB is source of truth
+            setItems(dbItems);
+          }
+        }
+      }
+      
+      setIsLoaded(true);
+      isInitialSyncRef.current = true;
+      prevUserRef.current = currentUserId;
+    };
+
+    initializeCart();
+  }, [user, isLoaded]);
+
+  // Sync to localStorage and DB on changes
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    // Save with userId to prevent doubling on next refresh
+    const storageData = {
+      items,
+      userId: user?.id || null
+    };
+    localStorage.setItem('hiba_cart', JSON.stringify(storageData));
+    
+    const syncWithDB = async () => {
+      if (user) {
+        await syncCart(items);
+      }
+    };
+
+    if (isInitialSyncRef.current) {
+      syncWithDB();
+    }
+  }, [items, isLoaded, user]);
 
   const addToCart = useCallback((product: Product, constraints?: Partial<CartItem>) => {
     setItems((prevItems) => {
@@ -132,6 +218,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearCart = useCallback(() => {
     setItems([]);
+    localStorage.removeItem('hiba_cart');
   }, []);
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -148,6 +235,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearCart,
         totalItems,
         totalPrice,
+        isLoaded,
       }}
     >
       {children}
