@@ -6,11 +6,13 @@ import { ArrowRight, Lock, Mail, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { login } from "@/features/auth/auth-actions";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/features/auth/auth-context";
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { refreshUser } = useAuth();
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -20,11 +22,11 @@ export default function LoginPage() {
     const formData = new FormData(event.currentTarget);
     const result = await login(formData);
 
-    setIsLoading(false);
-
     if (result.error) {
       setError(result.error);
+      setIsLoading(false);
     } else {
+      await refreshUser();
       router.push("/");
       router.refresh();
     }

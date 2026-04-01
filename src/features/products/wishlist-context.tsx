@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { Product, WishlistItem } from '@/types/product';
-import { getSession } from '@/features/auth/auth-actions';
+import { useAuth } from '@/features/auth/auth-context';
 import { syncWishlist, getCartAndWishlist } from '@/features/products/product-actions';
 
 interface WishlistContextType {
@@ -18,8 +18,9 @@ const WishlistContext = createContext<WishlistContextType | undefined>(undefined
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user } = useAuth();
   const isInitialSyncRef = useRef(false);
+  const prevUserRef = useRef<string | null>(null);
 
   // Helper to compare constraints
   const areConstraintsEqual = (item: WishlistItem, constraints?: Partial<WishlistItem>) => {
@@ -30,69 +31,88 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
-  // Load from local storage and sync with DB on mount
+  // Load from local storage and sync with DB on mount or user change
   useEffect(() => {
     const initializeWishlist = async () => {
-      // 1. Load from localStorage
-      const savedWishlist = localStorage.getItem('hiba_wishlist');
+      const currentUserId = user?.id || null;
+      
+      // Avoid re-initializing if user hasn't actually changed
+      if (isLoaded && currentUserId === prevUserRef.current) return;
+
+      // 1. Load current items from localStorage immediately
+      const savedData = localStorage.getItem('hiba_wishlist');
       let localItems: WishlistItem[] = [];
-      if (savedWishlist) {
+      let localUserId: string | null = null;
+
+      if (savedData) {
         try {
-          localItems = JSON.parse(savedWishlist);
+          const parsed = JSON.parse(savedData);
+          if (Array.isArray(parsed)) {
+            localItems = parsed; // Support old format
+          } else {
+            localItems = parsed.items || [];
+            localUserId = parsed.userId || null;
+          }
         } catch (e) {
           console.error('Failed to parse wishlist', e);
         }
       }
 
-      // 2. Check for session
-      const session = await getSession();
-      if (session) {
-        setIsAuthenticated(true);
-        // 3. Fetch from DB
+      // Initial local load to show items immediately if not already loaded
+      if (!isLoaded) {
+        setItems(localItems);
+      }
+
+      // 2. If logged in, perform smart sync/merge
+      if (user) {
         const dbData = await getCartAndWishlist();
         if (dbData && dbData.wishlist) {
           const dbItems: WishlistItem[] = dbData.wishlist;
           
-          // 4. Merge Logic: Start with DB items, add local items that aren't duplicates
-          const mergedItems = [...dbItems];
-          
-          localItems.forEach(localItem => {
-            const exists = mergedItems.some(dbItem => 
-              dbItem.id === localItem.id && areConstraintsEqual(dbItem, localItem)
-            );
+          // Merge ONLY if we have a guest wishlist (localUserId is null)
+          if (localUserId !== user.id) {
+            const mergedItems = [...dbItems];
             
-            if (!exists) {
-              mergedItems.push(localItem);
-            }
-          });
+            localItems.forEach(localItem => {
+              const exists = mergedItems.some(dbItem => 
+                dbItem.id === localItem.id && areConstraintsEqual(dbItem, localItem)
+              );
+              
+              if (!exists) {
+                mergedItems.push(localItem);
+              }
+            });
 
-          setItems(mergedItems);
-          // Sync merged wishlist back to DB if local items were added
-          if (localItems.length > 0) {
+            setItems(mergedItems);
             await syncWishlist(mergedItems);
+          } else {
+            // userId matches, DB is source of truth
+            setItems(dbItems);
           }
-        } else {
-          setItems(localItems);
         }
-      } else {
-        setItems(localItems);
       }
       
       setIsLoaded(true);
       isInitialSyncRef.current = true;
+      prevUserRef.current = currentUserId;
     };
 
     initializeWishlist();
-  }, []);
+  }, [user, isLoaded]);
 
   // Sync to localStorage and DB on changes
   useEffect(() => {
     if (!isLoaded) return;
 
-    localStorage.setItem('hiba_wishlist', JSON.stringify(items));
+    // Save with userId to prevent doubling on next refresh
+    const storageData = {
+      items,
+      userId: user?.id || null
+    };
+    localStorage.setItem('hiba_wishlist', JSON.stringify(storageData));
     
     const syncWithDB = async () => {
-      if (isAuthenticated) {
+      if (user) {
         await syncWishlist(items);
       }
     };
@@ -100,7 +120,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (isInitialSyncRef.current) {
       syncWithDB();
     }
-  }, [items, isLoaded, isAuthenticated]);
+  }, [items, isLoaded, user]);
 
   const toggleWishlist = useCallback((product: Product, constraints?: Partial<WishlistItem>) => {
     setItems((prevItems) => {
@@ -156,4 +176,3 @@ export const useWishlist = () => {
   }
   return context;
 };
-
