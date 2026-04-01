@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Search, User, Heart, ShoppingBag, Menu } from "lucide-react";
+import { Search, User, Heart, ShoppingBag, Menu, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getSession, logout } from "@/features/auth/auth-actions";
+import { useRouter } from "next/navigation";
 
 const navLinks = [
   { name: "BRIDAL", href: "/shop?category=bridal" },
@@ -15,14 +17,31 @@ const navLinks = [
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll);
+
+    // Fetch session
+    const fetchSession = async () => {
+      const session = await getSession();
+      setUser(session);
+    };
+    fetchSession();
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    setUser(null);
+    router.push("/");
+    router.refresh();
+  };
 
   return (
     <>
@@ -72,9 +91,26 @@ export function Navbar() {
               <button className="text-brand-charcoal hover:text-brand-gold transition-colors" aria-label="Search">
                 <Search className="w-5 h-5 stroke-[1.5]" />
               </button>
-              <Link href="/login" className="hidden sm:block text-brand-charcoal hover:text-brand-gold transition-colors" aria-label="Account">
-                <User className="w-5 h-5 stroke-[1.5]" />
-              </Link>
+              
+              {user ? (
+                <div className="flex items-center space-x-4">
+                  <span className="hidden sm:inline text-xs font-semibold uppercase tracking-widest text-brand-charcoal/60">
+                    Hi, {user.name.split(' ')[0]}
+                  </span>
+                  <button 
+                    onClick={handleLogout}
+                    className="text-brand-charcoal hover:text-brand-gold transition-colors" 
+                    aria-label="Logout"
+                  >
+                    <LogOut className="w-5 h-5 stroke-[1.5]" />
+                  </button>
+                </div>
+              ) : (
+                <Link href="/login" className="hidden sm:block text-brand-charcoal hover:text-brand-gold transition-colors" aria-label="Account">
+                  <User className="w-5 h-5 stroke-[1.5]" />
+                </Link>
+              )}
+
               <button className="hidden sm:block text-brand-charcoal hover:text-brand-gold transition-colors" aria-label="Wishlist">
                 <Heart className="w-5 h-5 stroke-[1.5]" />
               </button>
@@ -110,9 +146,18 @@ export function Navbar() {
                 </Link>
               ))}
               <div className="pt-4 border-t border-brand-charcoal/10 flex space-x-6">
-                <Link href="/login" className="flex items-center text-sm font-medium tracking-wide text-brand-charcoal hover:text-brand-gold transition-colors">
-                  <User className="w-4 h-4 mr-2" /> ACCOUNT
-                </Link>
+                {user ? (
+                  <button 
+                    onClick={handleLogout}
+                    className="flex items-center text-sm font-medium tracking-wide text-brand-charcoal hover:text-brand-gold transition-colors"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" /> LOGOUT
+                  </button>
+                ) : (
+                  <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="flex items-center text-sm font-medium tracking-wide text-brand-charcoal hover:text-brand-gold transition-colors">
+                    <User className="w-4 h-4 mr-2" /> ACCOUNT
+                  </Link>
+                )}
                 <button className="flex items-center text-sm font-medium tracking-wide text-brand-charcoal hover:text-brand-gold transition-colors">
                   <Heart className="w-4 h-4 mr-2" /> WISHLIST
                 </button>
