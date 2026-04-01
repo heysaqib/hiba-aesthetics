@@ -11,6 +11,39 @@ const AddressSchema = new Schema({
   isDefault: { type: Boolean, default: false },
 });
 
+const CartItemSchema = new Schema({
+  id: { type: String, required: true },
+  brand: { type: String, required: true },
+  name: { type: String, required: true },
+  price: { type: Number, required: true },
+  originalPrice: { type: Number },
+  image: { type: String, required: true },
+  quantity: { type: Number, required: true, default: 1 },
+  selectedSize: { type: String },
+  selectedColor: {
+    id: { type: String },
+    hex: { type: String },
+    name: { type: String }
+  },
+  selectedDesign: { type: String },
+});
+
+const WishlistItemSchema = new Schema({
+  id: { type: String, required: true },
+  brand: { type: String, required: true },
+  name: { type: String, required: true },
+  price: { type: Number, required: true },
+  originalPrice: { type: Number },
+  image: { type: String, required: true },
+  selectedSize: { type: String },
+  selectedColor: {
+    id: { type: String },
+    hex: { type: String },
+    name: { type: String }
+  },
+  selectedDesign: { type: String },
+});
+
 const UserSchema = new Schema({
   email: {
     type: String,
@@ -36,6 +69,8 @@ const UserSchema = new Schema({
     default: '',
   },
   addresses: [AddressSchema],
+  cart: [CartItemSchema],
+  wishlist: [WishlistItemSchema],
   role: {
     type: String,
     enum: ['user', 'admin'],

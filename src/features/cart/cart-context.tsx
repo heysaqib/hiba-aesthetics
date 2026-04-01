@@ -1,7 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { Product, CartItem } from '@/types/product';
+import { getSession } from '@/features/auth/auth-actions';
+import { syncCart, getCartAndWishlist } from '@/features/products/product-actions';
 
 interface CartContextType {
   items: CartItem[];
@@ -12,28 +14,18 @@ interface CartContextType {
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
+  isLoaded: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const isInitialSyncRef = useRef(false);
 
-  useEffect(() => {
-    const savedCart = localStorage.getItem('hiba_cart');
-    if (savedCart) {
-      try {
-        setItems(JSON.parse(savedCart));
-      } catch (e) {
-        console.error('Failed to parse cart', e);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('hiba_cart', JSON.stringify(items));
-  }, [items]);
-
+  // Helper to compare constraints
   const areConstraintsEqual = (c1?: Partial<CartItem>, c2?: Partial<CartItem>) => {
     return (
       c1?.selectedSize === c2?.selectedSize &&
@@ -41,6 +33,82 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       c1?.selectedDesign === c2?.selectedDesign
     );
   };
+
+  // Load from local storage and sync with DB on mount
+  useEffect(() => {
+    const initializeCart = async () => {
+      // 1. Load from localStorage
+      const savedCart = localStorage.getItem('hiba_cart');
+      let localItems: CartItem[] = [];
+      if (savedCart) {
+        try {
+          localItems = JSON.parse(savedCart);
+        } catch (e) {
+          console.error('Failed to parse cart', e);
+        }
+      }
+
+      // 2. Check for session
+      const session = await getSession();
+      if (session) {
+        setIsAuthenticated(true);
+        // 3. Fetch from DB
+        const dbData = await getCartAndWishlist();
+        if (dbData && dbData.cart) {
+          const dbItems: CartItem[] = dbData.cart;
+          
+          // 4. Merge Logic: Start with DB items, add local items that aren't duplicates
+          // If duplicate, sum quantities
+          const mergedItems = [...dbItems];
+          
+          localItems.forEach(localItem => {
+            const existingIndex = mergedItems.findIndex(dbItem => 
+              dbItem.id === localItem.id && areConstraintsEqual(dbItem, localItem)
+            );
+            
+            if (existingIndex > -1) {
+              mergedItems[existingIndex].quantity += localItem.quantity;
+            } else {
+              mergedItems.push(localItem);
+            }
+          });
+
+          setItems(mergedItems);
+          // Sync merged cart back to DB if local items were added
+          if (localItems.length > 0) {
+            await syncCart(mergedItems);
+          }
+        } else {
+          setItems(localItems);
+        }
+      } else {
+        setItems(localItems);
+      }
+      
+      setIsLoaded(true);
+      isInitialSyncRef.current = true;
+    };
+
+    initializeCart();
+  }, []);
+
+  // Sync to localStorage and DB on changes
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    localStorage.setItem('hiba_cart', JSON.stringify(items));
+    
+    const syncWithDB = async () => {
+      if (isAuthenticated) {
+        await syncCart(items);
+      }
+    };
+
+    // Skip sync on initial mount/load to avoid redundant calls
+    if (isInitialSyncRef.current) {
+      syncWithDB();
+    }
+  }, [items, isLoaded, isAuthenticated]);
 
   const addToCart = useCallback((product: Product, constraints?: Partial<CartItem>) => {
     setItems((prevItems) => {
@@ -132,6 +200,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearCart = useCallback(() => {
     setItems([]);
+    localStorage.removeItem('hiba_cart');
   }, []);
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -148,6 +217,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearCart,
         totalItems,
         totalPrice,
+        isLoaded,
       }}
     >
       {children}

@@ -29,8 +29,8 @@ export function Navbar() {
   const [user, setUser] = useState<UserSession | null>(null);
   const router = useRouter();
   
-  const { totalItems: cartCount } = useCart();
-  const { items: wishlistItems } = useWishlist();
+  const { totalItems: cartCount, clearCart } = useCart();
+  const { items: wishlistItems, clearWishlist } = useWishlist();
   const wishlistCount = wishlistItems.length;
 
   useEffect(() => {
@@ -52,6 +52,10 @@ export function Navbar() {
   }, []);
 
   const handleLogout = async () => {
+    // Clear local data
+    clearCart();
+    clearWishlist();
+    
     await logout();
     setUser(null);
     router.push("/");

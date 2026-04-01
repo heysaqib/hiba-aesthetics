@@ -3,11 +3,19 @@
 import { logout } from "@/features/auth/auth-actions";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
+import { useCart } from "@/features/cart/cart-context";
+import { useWishlist } from "@/features/products/wishlist-context";
 
 export default function LogoutButton() {
   const router = useRouter();
+  const { clearCart } = useCart();
+  const { clearWishlist } = useWishlist();
 
   async function handleLogout() {
+    // Clear local data first to protect privacy
+    clearCart();
+    clearWishlist();
+    
     await logout();
     router.push("/login");
     router.refresh();
