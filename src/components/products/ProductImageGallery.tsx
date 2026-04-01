@@ -130,7 +130,7 @@ export function ProductImageGallery({ images }: ProductImageGalleryProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100000] flex flex-col items-center justify-center bg-brand-cream/98 backdrop-blur-3xl"
+              className="fixed inset-0 z-[200000] flex flex-col items-center justify-center bg-brand-cream/98 backdrop-blur-3xl"
               onClick={() => setIsModalOpen(false)}
             >
               <button 

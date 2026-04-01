@@ -146,31 +146,43 @@ export default function WishlistPage() {
                   className="bg-white border border-brand-charcoal/5 flex flex-col group"
                 >
                   <div className="relative aspect-[3/4] overflow-hidden">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      fill
-                      className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
+                    <Link href={`/shop/${item.id}?${new URLSearchParams({
+                      ...(item.selectedSize && { size: item.selectedSize }),
+                      ...(item.selectedColor && { color: item.selectedColor.id }),
+                      ...(item.selectedDesign && { design: item.selectedDesign }),
+                    }).toString()}`} className="block w-full h-full">
+                      <div className="relative w-full h-full">
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        />
+                      </div>
+                    </Link>
                     <button
                       onClick={() => toggleWishlist(item, {
                         selectedSize: item.selectedSize,
                         selectedColor: item.selectedColor,
                         selectedDesign: item.selectedDesign,
                       })}
-                      className="absolute top-4 right-4 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-red-500 hover:bg-white transition-colors shadow-sm"
+                      className="absolute top-4 right-4 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-red-500 hover:bg-white transition-colors shadow-sm z-10"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                  
-                  <div className="p-6 flex flex-col flex-1">
-                    <div className="mb-4">
-                      <h3 className="text-[9px] tracking-[0.2em] font-bold uppercase text-brand-charcoal/40 mb-1">{item.brand}</h3>
-                      <h2 className="text-base font-serif text-brand-charcoal uppercase tracking-tight">{item.name}</h2>
-                      <p className="text-sm font-bold text-brand-charcoal mt-2">Rs. {formatPrice(item.price)}</p>
-                    </div>
 
+                  <div className="p-6 flex flex-col flex-1">
+                    <Link href={`/shop/${item.id}?${new URLSearchParams({
+                      ...(item.selectedSize && { size: item.selectedSize }),
+                      ...(item.selectedColor && { color: item.selectedColor.id }),
+                      ...(item.selectedDesign && { design: item.selectedDesign }),
+                    }).toString()}`} className="mb-4 group/title">
+                      <h3 className="text-[9px] tracking-[0.2em] font-bold uppercase text-brand-charcoal/40 mb-1">{item.brand}</h3>
+                      <h2 className="text-base font-serif text-brand-charcoal uppercase tracking-tight group-hover/title:text-brand-gold transition-colors">{item.name}</h2>
+                      <p className="text-sm font-bold text-brand-charcoal mt-2">Rs. {formatPrice(item.price)}</p>
+                    </Link>
                     {/* Saved Constraints */}
                     <div className="flex flex-wrap gap-4 mb-6 pt-4 border-t border-brand-charcoal/5">
                       {item.selectedSize && (
