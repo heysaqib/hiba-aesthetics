@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { updateProfile } from "@/features/auth/auth-actions";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, AlertCircle } from "lucide-react";
 
 export default function ProfileForm({ user }: { user: any }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -16,6 +16,22 @@ export default function ProfileForm({ user }: { user: any }) {
     setError(null);
 
     const formData = new FormData(event.currentTarget);
+    const name = formData.get("name") as string;
+    const mobileNumber = formData.get("mobileNumber") as string;
+
+    // Client-side validation
+    if (!name || name.length < 3) {
+      setError("Please enter your full name (minimum 3 characters)");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!mobileNumber || mobileNumber.length < 10) {
+      setError("Please enter a valid mobile number");
+      setIsLoading(false);
+      return;
+    }
+
     const result = await updateProfile(formData);
 
     setIsLoading(false);
@@ -28,52 +44,60 @@ export default function ProfileForm({ user }: { user: any }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in duration-700">
       {error && (
-        <div className="text-red-600 text-xs uppercase tracking-widest font-semibold">{error}</div>
+        <div className="flex items-center space-x-2 text-red-500 bg-red-50/50 p-4 border border-red-100">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <p className="text-[10px] uppercase tracking-widest font-bold">{error}</p>
+        </div>
       )}
       
-      <div className="space-y-2">
-        <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-brand-charcoal/40">Full Name</label>
-        <input
-          name="name"
-          defaultValue={user.name}
-          className="w-full border-b border-brand-charcoal/20 bg-transparent py-2 outline-none focus:border-brand-charcoal transition-colors text-sm font-medium"
-          placeholder="Enter your full name"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-brand-charcoal/40">Email Address</label>
-        <div className="w-full py-2 text-sm font-medium text-brand-charcoal/60 cursor-not-allowed">
-          {user.email}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-1">
+          <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-brand-charcoal/30">Full Name</label>
+          <input
+            name="name"
+            defaultValue={user.name}
+            required
+            className="w-full border-b border-brand-charcoal/10 bg-transparent py-2 outline-none focus:border-brand-gold transition-colors text-sm font-medium"
+            placeholder="E.g. Hiba Khan"
+          />
         </div>
-      </div>
 
-      <div className="space-y-2">
-        <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-brand-charcoal/40">Mobile Number</label>
-        <input
-          name="mobileNumber"
-          defaultValue={user.mobileNumber}
-          className="w-full border-b border-brand-charcoal/20 bg-transparent py-2 outline-none focus:border-brand-charcoal transition-colors text-sm font-medium"
-          placeholder="Enter your mobile number"
-        />
+        <div className="space-y-1 opacity-50">
+          <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-brand-charcoal/30">Email Address</label>
+          <div className="w-full py-2 text-sm font-medium">
+            {user.email}
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-brand-charcoal/30">Mobile Number</label>
+          <input
+            name="mobileNumber"
+            type="tel"
+            defaultValue={user.mobileNumber}
+            required
+            className="w-full border-b border-brand-charcoal/10 bg-transparent py-2 outline-none focus:border-brand-gold transition-colors text-sm font-medium"
+            placeholder="+92 300 1234567"
+          />
+        </div>
       </div>
 
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full flex items-center justify-center space-x-2 bg-brand-charcoal text-white py-4 hover:bg-brand-gold transition-colors group disabled:opacity-50"
+        className="inline-flex items-center space-x-3 bg-brand-gold text-white px-8 py-3.5 hover:bg-brand-charcoal transition-all duration-300 disabled:opacity-50 group shadow-md"
       >
         {isLoading ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <Loader2 className="w-4 h-4 animate-spin text-white" />
         ) : success ? (
           <>
-            <span className="text-xs uppercase tracking-[0.2em] font-bold">Updated</span>
-            <Check className="w-4 h-4" />
+            <span className="text-[10px] uppercase tracking-[0.2em] font-bold">Profile Secured</span>
+            <Check className="w-4 h-4 text-white" />
           </>
         ) : (
-          <span className="text-xs uppercase tracking-[0.2em] font-bold">Update Profile</span>
+          <span className="text-[10px] uppercase tracking-[0.2em] font-bold">Secure Changes</span>
         )}
       </button>
     </form>
