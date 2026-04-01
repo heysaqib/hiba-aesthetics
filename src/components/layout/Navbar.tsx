@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Search, User, Heart, ShoppingBag, Menu, LogOut } from "lucide-react";
+import { Search, User, Heart, ShoppingBag, Menu, LogOut, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSession, logout } from "@/features/auth/auth-actions";
 import { useRouter } from "next/navigation";
+import { useCart } from "@/features/cart/cart-context";
+import { useWishlist } from "@/features/products/wishlist-context";
 
 const navLinks = [
   { name: "BRIDAL", href: "/shop?category=bridal" },
@@ -26,6 +28,10 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<UserSession | null>(null);
   const router = useRouter();
+  
+  const { totalItems: cartCount } = useCart();
+  const { items: wishlistItems } = useWishlist();
+  const wishlistCount = wishlistItems.length;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -56,7 +62,7 @@ export function Navbar() {
     <>
       <motion.header
         className={`fixed top-0 w-full z-[100010] transition-colors duration-300 ${
-          isScrolled ? "bg-brand-cream/80 backdrop-blur-md border-b border-brand-charcoal/10" : "bg-transparent"
+          isScrolled || mobileMenuOpen ? "bg-brand-cream/90 backdrop-blur-md border-b border-brand-charcoal/10" : "bg-transparent"
         }`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
@@ -82,9 +88,9 @@ export function Navbar() {
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="text-brand-charcoal hover:text-brand-gold transition-colors p-2 -ml-2"
-                aria-label="Open menu"
+                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               >
-                <Menu className="w-5 h-5" />
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
             </div>
 
@@ -123,15 +129,31 @@ export function Navbar() {
                 </Link>
               )}
 
-              <button className="hidden sm:block text-brand-charcoal hover:text-brand-gold transition-colors" aria-label="Wishlist">
+              <Link href="/wishlist" className="hidden sm:block text-brand-charcoal hover:text-brand-gold transition-colors relative" aria-label="Wishlist">
                 <Heart className="w-5 h-5 stroke-[1.5]" />
-              </button>
-              <button className="text-brand-charcoal hover:text-brand-gold transition-colors relative" aria-label="Cart">
+                {wishlistCount > 0 && (
+                  <motion.span 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 bg-brand-gold text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center"
+                  >
+                    {wishlistCount}
+                  </motion.span>
+                )}
+              </Link>
+              <Link href="/cart" className="text-brand-charcoal hover:text-brand-gold transition-colors relative" aria-label="Cart">
                 <ShoppingBag className="w-5 h-5 stroke-[1.5]" />
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                  2
-                </span>
-              </button>
+                {cartCount > 0 && (
+                  <motion.span 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    key={cartCount}
+                    className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center"
+                  >
+                    {cartCount}
+                  </motion.span>
+                )}
+              </Link>
             </div>
           </div>
         </div>
@@ -144,7 +166,7 @@ export function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden fixed top-20 left-0 w-full bg-brand-cream border-b border-brand-charcoal/10 z-40 overflow-hidden shadow-xl"
+            className="md:hidden fixed top-20 left-0 w-full bg-brand-cream border-b border-brand-charcoal/10 z-[100005] overflow-hidden shadow-xl"
           >
             <div className="px-4 py-6 flex flex-col space-y-4">
               {navLinks.map((link) => (
@@ -157,7 +179,7 @@ export function Navbar() {
                   {link.name}
                 </Link>
               ))}
-              <div className="pt-4 border-t border-brand-charcoal/10 flex space-x-6">
+              <div className="pt-4 border-t border-brand-charcoal/10 flex flex-wrap gap-6">
                 {user ? (
                   <button 
                     onClick={handleLogout}
@@ -170,9 +192,12 @@ export function Navbar() {
                     <User className="w-4 h-4 mr-2" /> ACCOUNT
                   </Link>
                 )}
-                <button className="flex items-center text-sm font-medium tracking-wide text-brand-charcoal hover:text-brand-gold transition-colors">
-                  <Heart className="w-4 h-4 mr-2" /> WISHLIST
-                </button>
+                <Link href="/wishlist" onClick={() => setMobileMenuOpen(false)} className="flex items-center text-sm font-medium tracking-wide text-brand-charcoal hover:text-brand-gold transition-colors">
+                  <Heart className="w-4 h-4 mr-2" /> WISHLIST ({wishlistCount})
+                </Link>
+                <Link href="/cart" onClick={() => setMobileMenuOpen(false)} className="flex items-center text-sm font-medium tracking-wide text-brand-charcoal hover:text-brand-gold transition-colors">
+                  <ShoppingBag className="w-4 h-4 mr-2" /> CART ({cartCount})
+                </Link>
               </div>
             </div>
           </motion.div>
