@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useEffect } from "react";
 import { ChevronDown, Heart, Facebook, Twitter, Instagram, Loader2, Check } from "lucide-react";
 import { ProductImageGallery } from "@/components/products/ProductImageGallery";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "@/features/cart/cart-context";
 import { useWishlist } from "@/features/products/wishlist-context";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "next/navigation";
 
 interface ProductDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -14,17 +15,19 @@ interface ProductDetailPageProps {
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const resolvedParams = use(params);
+  const searchParams = useSearchParams();
   const { id } = { id: resolvedParams.slug }; // Using slug as ID for dummy data
   
   const [selectedColor, setSelectedColor] = useState("sage");
   const [selectedSize, setSelectedSize] = useState("");
+  const [sizeError, setSizeError] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
 
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
 
-  // Dummy product data - in a real app this would be fetched based on id/slug
+  // Dummy product data
   const product = {
     id: id,
     brand: "Hiba Pret",
@@ -35,13 +38,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     description: "A contemporary take on traditional elegance. This exquisite sage green kurta set features subtle silver threadwork, making it an ideal choice for daytime events and festive gatherings."
   };
 
-  const images = [
-    "/images/products/pakistani_casual_1_1775023839040.png",
-    "/images/products/pakistani_casual_2_1775023855002.png",
-    "/images/products/pakistani_casual_3_1775024029352.png",
-    "/images/products/pakistani_bridal_1_1775023821125.png"
-  ];
-
   const colors = [
     { id: "sage", hex: "#8A9A5B", name: "Sage Green" },
     { id: "gold", hex: "#C5A165", name: "Gold Accent" }
@@ -49,18 +45,45 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
   const sizes = ['XS', 'S', 'M', 'L', 'XL'];
 
+  // Initialize from URL query parameters
+  useEffect(() => {
+    const sizeParam = searchParams.get('size');
+    const colorParam = searchParams.get('color');
+    
+    if (sizeParam && sizes.includes(sizeParam)) {
+      setSelectedSize(sizeParam);
+      setSizeError(false);
+    }
+    
+    if (colorParam && colors.some(c => c.id === colorParam)) {
+      setSelectedColor(colorParam);
+    }
+  }, [searchParams]);
+
+  const images = [
+    "/images/products/pakistani_casual_1_1775023839040.png",
+    "/images/products/pakistani_casual_2_1775023855002.png",
+    "/images/products/pakistani_casual_3_1775024029352.png",
+    "/images/products/pakistani_bridal_1_1775023821125.png"
+  ];
+
   const handleAddToCart = () => {
     if (!selectedSize) {
-      alert("Please select a size first");
+      setSizeError(true);
+      // Auto-reset error after 1.5 seconds
+      setTimeout(() => setSizeError(false), 1500);
       return;
     }
     
+    setSizeError(false);
     setIsAddingToCart(true);
     // Simulate slight delay for effect
     setTimeout(() => {
-      addToCart({
-        ...product,
-        name: `${product.name} (${selectedSize})`
+      addToCart(product, {
+        selectedSize: selectedSize,
+        selectedColor: colors.find(c => c.id === selectedColor),
+        // selectedDesign: selectedDesign, // Add if design selector is implemented
+        quantity: 1
       });
       setIsAddingToCart(false);
       setAddedToCart(true);
@@ -69,10 +92,16 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   };
 
   const handleToggleWishlist = () => {
-    toggleWishlist(product);
+    toggleWishlist(product, {
+      selectedSize: selectedSize,
+      selectedColor: colors.find(c => c.id === selectedColor),
+    });
   };
 
-  const isWishlisted = isInWishlist(product.id);
+  const isWishlisted = isInWishlist(product.id, {
+    selectedSize: selectedSize,
+    selectedColor: colors.find(c => c.id === selectedColor),
+  });
 
   return (
     <div className="bg-brand-cream min-h-screen pt-24 pb-32">
@@ -128,10 +157,14 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               </div>
 
               {/* Size Selector */}
-              <div className="mb-8">
+              <motion.div 
+                className="mb-8"
+                animate={sizeError ? { x: [-10, 10, -10, 10, 0] } : {}}
+                transition={{ duration: 0.4 }}
+              >
                 <div className="flex justify-between items-end mb-4">
-                  <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-charcoal/40">
-                    Select Size: <span className="text-brand-gold ml-2">{selectedSize || "None"}</span>
+                  <h3 className={`text-[10px] font-bold tracking-[0.2em] uppercase transition-colors ${sizeError ? 'text-red-500' : 'text-brand-charcoal/40'}`}>
+                    Select Size: <span className={sizeError ? 'text-red-500' : 'text-brand-gold'}>{selectedSize || (sizeError ? "Required" : "None")}</span>
                   </h3>
                   <button className="text-[10px] font-bold tracking-widest uppercase text-brand-charcoal/60 underline hover:text-brand-gold transition-colors">Size Guide</button>
                 </div>
@@ -139,19 +172,36 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                   {sizes.map((s) => (
                     <button 
                       key={s} 
-                      onClick={() => setSelectedSize(s)}
+                      onClick={() => {
+                        setSelectedSize(s);
+                        setSizeError(false);
+                      }}
                       className={`min-w-[50px] h-12 border text-xs font-bold tracking-widest transition-all duration-300 ${
                         selectedSize === s 
                         ? 'bg-brand-charcoal text-white border-brand-charcoal shadow-lg scale-105' 
-                        : 'bg-white/50 text-brand-charcoal border-brand-charcoal/10 hover:border-brand-charcoal hover:bg-white'
+                        : sizeError 
+                          ? 'bg-red-50 text-red-500 border-red-200'
+                          : 'bg-white/50 text-brand-charcoal border-brand-charcoal/10 hover:border-brand-charcoal hover:bg-white'
                       }`}
                     >
                       {s}
                     </button>
                   ))}
                 </div>
-              </div>
-
+                <AnimatePresence>
+                  {sizeError && (
+                    <motion.p 
+                      initial={{ opacity: 0, y: -5, filter: "blur(5px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      exit={{ opacity: 0, y: 5, filter: "blur(10px)", scale: 0.95 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      className="text-[10px] text-red-500 font-bold uppercase tracking-widest mt-3"
+                    >
+                      Please select a size to continue
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </motion.div>
               {/* Add to Cart Actions */}
               <div className="flex space-x-4 mb-16">
                 <button 
