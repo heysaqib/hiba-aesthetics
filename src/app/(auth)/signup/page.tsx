@@ -40,6 +40,7 @@ export default function SignupPage() {
           fill
           className="object-cover object-bottom"
           priority
+          sizes="(max-width: 1024px) 100vw, 50vw"
         />
         <div className="absolute inset-0 bg-brand-charcoal/20" />
         <div className="absolute bottom-16 left-16 right-16 text-white text-center">

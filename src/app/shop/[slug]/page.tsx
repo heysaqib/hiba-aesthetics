@@ -3,8 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, Heart, Share2, Facebook, Twitter, Instagram } from "lucide-react";
+import { ProductImageGallery } from "@/components/products/ProductImageGallery";
 
 export default function ProductDetailPage() {
+  const images = [
+    "/images/products/pakistani_casual_1_1775023839040.png",
+    "/images/products/pakistani_casual_2_1775023855002.png",
+    "/images/products/pakistani_casual_3_1775024029352.png",
+    "/images/products/pakistani_bridal_1_1775023821125.png"
+  ];
+
   return (
     <div className="bg-brand-cream min-h-screen pt-24 pb-32">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -12,25 +20,7 @@ export default function ProductDetailPage() {
           
           {/* Left - Image Gallery (Sticky on desktop) */}
           <div className="w-full lg:w-[55%]">
-            <div className="sticky top-32 space-y-4">
-              <div className="relative aspect-[3/4] w-full bg-brand-charcoal/5">
-                <Image
-                  src="/images/products/pakistani_casual_1_1775023839040.png"
-                  alt="Product Detail"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="relative aspect-square w-full bg-brand-charcoal/5">
-                  <Image src="/images/products/pakistani_casual_1_1775023839040.png" alt="Detail 1" fill className="object-cover object-top" />
-                </div>
-                <div className="relative aspect-square w-full bg-brand-charcoal/5">
-                  <Image src="/images/products/pakistani_casual_1_1775023839040.png" alt="Detail 2" fill className="object-cover object-bottom" />
-                </div>
-              </div>
-            </div>
+            <ProductImageGallery images={images} />
           </div>
 
           {/* Right - Product Details */}

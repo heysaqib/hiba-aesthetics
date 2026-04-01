@@ -1,0 +1,213 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, ZoomIn, ChevronLeft, ChevronRight } from "lucide-react";
+
+interface ProductImageGalleryProps {
+  images: string[];
+}
+
+export function ProductImageGallery({ images }: ProductImageGalleryProps) {
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [magnifierStyle, setMagnifierStyle] = useState({ display: "none", top: 0, left: 0, backgroundPosition: "0% 0%" });
+  
+  const modalImageRef = useRef<HTMLDivElement>(null);
+  const activeImage = images[activeImageIndex];
+
+  // Prevent scroll when modal is open
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isModalOpen]);
+
+  const handleMagnifier = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!modalImageRef.current) return;
+
+    const { left, top, width, height } = modalImageRef.current.getBoundingClientRect();
+    const x = e.clientX - left;
+    const y = e.clientY - top;
+    const px = (x / width) * 100;
+    const py = (y / height) * 100;
+
+    setMagnifierStyle({
+      display: "block",
+      top: y - 75,
+      left: x - 75,
+      backgroundPosition: `${px}% ${py}%`,
+    });
+  };
+
+  const nextImage = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setActiveImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  return (
+    <div className="sticky top-32 space-y-6">
+      {/* Static Main Image */}
+      <div 
+        className="relative aspect-[3/4] w-full bg-brand-charcoal/5 overflow-hidden cursor-zoom-in group"
+        onClick={() => setIsModalOpen(true)}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeImage}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="absolute inset-0"
+          >
+            <Image
+              src={activeImage}
+              alt="Product Main View"
+              fill
+              className="object-cover"
+              priority
+              sizes="(max-width: 1024px) 100vw, 60vw"
+            />
+          </motion.div>
+        </AnimatePresence>
+        
+        <div className="absolute inset-0 bg-brand-charcoal/0 group-hover:bg-brand-charcoal/5 transition-colors duration-300 flex items-center justify-center">
+          <div className="bg-white/80 backdrop-blur-md p-3 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300 shadow-xl border border-brand-charcoal/5">
+            <ZoomIn className="w-5 h-5 text-brand-charcoal" />
+          </div>
+        </div>
+      </div>
+
+      {/* Thumbnails */}
+      <div className="grid grid-cols-4 gap-4">
+        {images.map((img, idx) => (
+          <button
+            key={idx}
+            onClick={() => setActiveImageIndex(idx)}
+            className={`relative aspect-square w-full bg-brand-charcoal/5 overflow-hidden transition-all duration-300 ${
+              activeImageIndex === idx 
+                ? "ring-1 ring-brand-gold ring-offset-2 ring-offset-brand-cream" 
+                : "opacity-60 hover:opacity-100"
+            }`}
+          >
+            <Image 
+              src={img} 
+              alt={`Thumbnail ${idx + 1}`} 
+              fill 
+              className="object-cover" 
+              sizes="(max-width: 1024px) 25vw, 15vw"
+            />
+          </button>
+        ))}
+      </div>
+
+      {/* Lightbox Modal - Using high z-index to fix overlay bugs */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-brand-cream/98 backdrop-blur-2xl"
+            onClick={() => setIsModalOpen(false)}
+          >
+            {/* Close Button */}
+            <button 
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-8 right-8 p-4 text-brand-charcoal hover:text-brand-gold transition-colors z-[10001] bg-white/50 backdrop-blur-md rounded-full shadow-sm border border-brand-charcoal/5"
+              aria-label="Close viewer"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {/* Main Carousel Area */}
+            <div className="relative w-full h-full flex items-center justify-center p-4 md:p-20">
+              {/* Navigation Arrows */}
+              <button 
+                onClick={prevImage}
+                className="absolute left-4 md:left-10 p-4 text-brand-charcoal hover:text-brand-gold transition-all z-[10001] bg-white/50 backdrop-blur-md rounded-full border border-brand-charcoal/5 shadow-sm active:scale-95"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+
+              <button 
+                onClick={nextImage}
+                className="absolute right-4 md:right-10 p-4 text-brand-charcoal hover:text-brand-gold transition-all z-[10001] bg-white/50 backdrop-blur-md rounded-full border border-brand-charcoal/5 shadow-sm active:scale-95"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+
+              {/* Zoomable Image Container */}
+              <motion.div 
+                key={activeImageIndex}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="relative h-full aspect-[3/4] max-h-[75vh] shadow-2xl bg-brand-charcoal/5 cursor-crosshair group"
+                ref={modalImageRef}
+                onClick={(e) => e.stopPropagation()}
+                onMouseMove={handleMagnifier}
+                onMouseLeave={() => setMagnifierStyle({ ...magnifierStyle, display: "none" })}
+              >
+                <Image
+                  src={activeImage}
+                  alt="Zoomed View"
+                  fill
+                  className="object-cover"
+                  sizes="90vw"
+                />
+
+                {/* Magnifier Glass Effect */}
+                <div 
+                  className="absolute pointer-events-none border-2 border-white shadow-2xl rounded-full overflow-hidden"
+                  style={{
+                    display: magnifierStyle.display,
+                    top: magnifierStyle.top,
+                    left: magnifierStyle.left,
+                    width: "180px",
+                    height: "180px",
+                    zIndex: 10005,
+                    backgroundImage: `url(${activeImage})`,
+                    backgroundSize: "600% 600%",
+                    backgroundPosition: magnifierStyle.backgroundPosition,
+                    backgroundRepeat: "no-repeat"
+                  }}
+                />
+              </motion.div>
+            </div>
+
+            {/* Bottom Carousel Thumbnails */}
+            <div className="absolute bottom-10 flex space-x-4 p-4 z-[10001]" onClick={(e) => e.stopPropagation()}>
+              {images.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveImageIndex(idx)}
+                  className={`relative w-16 h-20 bg-brand-charcoal/5 overflow-hidden transition-all duration-300 border-2 ${
+                    activeImageIndex === idx 
+                      ? "border-brand-gold scale-110 shadow-lg" 
+                      : "border-transparent opacity-40 hover:opacity-100"
+                  }`}
+                >
+                  <Image src={img} alt="Thumbnail" fill className="object-cover" sizes="64px" />
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
