@@ -14,10 +14,17 @@ const navLinks = [
   { name: "UNSTITCHED", href: "/shop?category=unstitched" },
 ];
 
+interface UserSession {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
+
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserSession | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -29,7 +36,9 @@ export function Navbar() {
     // Fetch session
     const fetchSession = async () => {
       const session = await getSession();
-      setUser(session);
+      if (session) {
+        setUser(session as unknown as UserSession);
+      }
     };
     fetchSession();
 

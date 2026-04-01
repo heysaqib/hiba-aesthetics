@@ -5,14 +5,25 @@ import { addAddress, deleteAddress, updateAddress, setPrimaryAddress } from "@/f
 import { Loader2, Plus, Trash2, X, Lock, Edit2, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+interface Address {
+  _id: string;
+  name: string;
+  mobile: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  isDefault: boolean;
+}
+
 interface AddressBookProps {
-  addresses: any[];
+  addresses: Address[];
   isProfileComplete: boolean;
 }
 
 export default function AddressBook({ addresses, isProfileComplete }: AddressBookProps) {
   const [isAdding, setIsAdding] = useState(false);
-  const [editingAddress, setEditingAddress] = useState<any>(null);
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();

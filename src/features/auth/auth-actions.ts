@@ -11,6 +11,17 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'fallback-secret-for-development'
 );
 
+interface Address {
+  _id: string;
+  name: string;
+  mobile: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  isDefault: boolean;
+}
+
 export async function login(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
@@ -56,7 +67,7 @@ export async function login(formData: FormData) {
 
     return { success: true };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Login error:', error);
     return { error: 'An error occurred during login' };
   }
@@ -110,7 +121,7 @@ export async function signup(formData: FormData) {
 
     return { success: true };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Signup error:', error);
     return { error: 'An error occurred during signup' };
   }
@@ -131,7 +142,7 @@ export async function getSession() {
   try {
     const { payload } = await jwtVerify(session.value, JWT_SECRET);
     return payload;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -146,7 +157,7 @@ export async function getUserProfile() {
     if (!user) return null;
     
     return JSON.parse(JSON.stringify(user));
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -167,7 +178,7 @@ export async function updateProfile(formData: FormData) {
 
     revalidatePath('/profile');
     return { success: true };
-  } catch (error: any) {
+  } catch {
     return { error: 'Failed to update profile' };
   }
 }
@@ -195,7 +206,7 @@ export async function addAddress(formData: FormData) {
     if (!user.addresses) user.addresses = [];
 
     if (address.isDefault) {
-      user.addresses.forEach((addr: any) => addr.isDefault = false);
+      user.addresses.forEach((addr: Address) => { addr.isDefault = false; });
     }
 
     user.addresses.push(address);
@@ -203,7 +214,7 @@ export async function addAddress(formData: FormData) {
 
     revalidatePath('/profile');
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Add address error:', error);
     return { error: 'Failed to add address' };
   }
@@ -228,11 +239,11 @@ export async function updateAddress(addressId: string, formData: FormData) {
     const user = await User.findById(session.id);
     if (!user) return { error: 'User not found' };
 
-    const addressIndex = user.addresses.findIndex((addr: any) => addr._id.toString() === addressId);
+    const addressIndex = user.addresses.findIndex((addr: Address) => addr._id.toString() === addressId);
     if (addressIndex === -1) return { error: 'Address not found' };
 
     if (updatedAddress.isDefault) {
-      user.addresses.forEach((addr: any) => addr.isDefault = false);
+      user.addresses.forEach((addr: Address) => { addr.isDefault = false; });
     }
 
     user.addresses[addressIndex] = { ...user.addresses[addressIndex].toObject(), ...updatedAddress };
@@ -240,7 +251,7 @@ export async function updateAddress(addressId: string, formData: FormData) {
 
     revalidatePath('/profile');
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Update address error:', error);
     return { error: 'Failed to update address' };
   }
@@ -255,7 +266,7 @@ export async function setPrimaryAddress(addressId: string) {
     const user = await User.findById(session.id);
     if (!user) return { error: 'User not found' };
 
-    user.addresses.forEach((addr: any) => {
+    user.addresses.forEach((addr: Address) => {
       addr.isDefault = addr._id.toString() === addressId;
     });
 
@@ -263,7 +274,7 @@ export async function setPrimaryAddress(addressId: string) {
 
     revalidatePath('/profile');
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Set primary address error:', error);
     return { error: 'Failed to set primary address' };
   }
@@ -281,7 +292,7 @@ export async function deleteAddress(addressId: string) {
 
     revalidatePath('/profile');
     return { success: true };
-  } catch (error: any) {
+  } catch {
     return { error: 'Failed to delete address' };
   }
 }
